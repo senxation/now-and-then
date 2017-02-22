@@ -1,0 +1,152 @@
+const express = require('express')
+const authApp = express();
+const app = require('./build/dev-server');
+const _ = require('underscore');
+const config = require('./app_config');
+
+const auth = require('./lib/googleapis/auth');
+const drive = require('./lib/googleapis/drive');
+const logger = require('./lib/logger');
+const ical = require('./lib/ical');
+const path = require('path');
+const fs = require('fs-extra');
+const MemoryFileSystem = require('memory-fs');
+const mfs = new MemoryFileSystem();
+
+const opn = require('opn');
+const port = 8000;
+const moment = require('moment');
+
+let cacheDir = path.join(process.cwd(), 'cache');
+fs.ensureDirSync(cacheDir);
+const listPath = path.join(cacheDir, 'list.json');
+const list = fs.existsSync(listPath) ? fs.readJsonSync(listPath) : [];
+let syncedList = list;
+
+// cors
+authApp.use(function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
+
+authApp.get('/oauth2callback', function (req, res) {
+  res.send(`${req.query.code}`)
+});
+
+const filePaths = [];
+
+const getFile = (id, ext) => {
+  const fileName = id + '.' + ext;
+  const filePath = '/photo/' + fileName;
+  const url = `http://localhost:${port}/file/${fileName}`;
+  // 이미 존재하면 스킵
+  if (mfs.existsSync(filePath)) {
+    return Promise.resolve(url);
+  }
+
+  return drive.getFile(id).then(obj => {
+    mfs.mkdirpSync('/photo');
+    mfs.writeFileSync(filePath, obj.buffer);
+
+    filePaths.push(filePath);
+    while (filePaths.length > 10) { // 2개만 유지
+      mfs.unlinkSync(filePaths.shift());
+    }
+    return Promise.resolve(url);
+  }, err => {
+    logger(err);
+    return Promise.reject();
+  });
+};
+
+authApp.get('/photo', function (req, res, next) {
+  const list = syncedList;
+  const ret = {};
+  const from = req.query.from;
+  const idx = (from) ? _.findIndex(list, item => item.id === from) : 0;
+  if (!list.length) {
+    res.send(null);
+    return;
+  }
+
+  ret.current = list[idx];
+  if (list.length > idx + 1) {
+    ret.next = list[idx + 1];
+  }
+
+  Promise.all([
+    getFile(ret.current.id, ret.current.fileExtension),
+    ret.next ? getFile(ret.next.id, ret.next.fileExtension) : Promise.resolve(null) // 다음거 미리 받음.
+  ]).then(objs => {
+    const current = _.first(objs);
+    const next = _.last(objs);
+
+    ret.current.path = current;
+    if (ret.next) {
+      ret.next.path = next;
+    }
+
+    res.json(ret);
+  }, err => {
+    logger(err);
+    res.json(null);
+  });
+});
+
+authApp.get('/file/:id', function (req, res, next) {
+  const path = '/photo/' + req.params.id;
+  const buffer = mfs.readFileSync(path);
+  res.set('Content-Type', express.static.mime.lookup(path));
+  res.send(buffer);
+});
+
+authApp.get('/schedule', function (req, res, next) {
+  ical.fetch(config.ical, moment().startOf('day'), moment().startOf('day').add(1, 'month')).then((data) => {
+    res.json({
+      events: _.sortBy(data, event => moment(event.start).toDate())
+    });
+  }, (err) => {
+    logger(err);
+  });
+});
+
+authApp.listen(port, function (err) {
+  if (err) {
+    console.log(err)
+    return
+  }
+});
+
+const oauth2Client = auth.init();
+auth.authorize(oauth2Client, (auth) => {
+  logger('authorized.');
+  drive.watch(auth, list, config.drive.watchInterval);
+  drive.event.on('modified', () => {
+    logger('modified.');
+    drive.listPhotos().then((list) => {
+      list = _.filter(list, item => item.hasThumbnail && (!item.imageMediaMetadata || item.imageMediaMetadata.cameraMake !== 'Apple')); // 핸폰으로 찍은거 제외
+      logger(`${list.length} photos synced.`);
+      fs.outputJsonSync(listPath, list);
+      syncedList = list;
+    }, (error) => {
+      logger(error);
+    });
+  })
+  drive.event.on('synced', () => {
+    syncedList = list;
+    logger('synced.');
+  });
+
+  drive.event.once('synced', () => {
+    opn('http://localhost:8080');
+  });
+
+  // init vue
+  app.listen(8080, function (err) {
+    if (err) {
+      console.log(err)
+      return
+    }
+  });
+});
