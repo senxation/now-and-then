@@ -22,7 +22,6 @@ const photoStore = {
     msg: 'test',
     bgs: []
   },
-
   loadImage(path) {
     return new Promise((resolve) => {
       var image = new Image();
@@ -32,7 +31,6 @@ const photoStore = {
       image.src = path;
     });
   },
-
   next(path) {
     this.loadImage(path).then(() => {
       this.state.bgs.push(path);
@@ -70,15 +68,18 @@ const fetchNext = (function () {
 
 export default {
   name: 'Board',
-  beforeMount() {
-    const INTERVAL = 10000 * 1;
+  beforeMount () {
+    const INTERVAL = 1000 * 15;
     fetchNext();
     this._timer = setInterval(fetchNext, INTERVAL);
+    setTimeout(() => {
+      location.reload()
+    }, 1000 * 60 * 60 * 3); // 3시간에 한번씨
   },
-  beforeDestroy() {
+  beforeDestroy () {
     clearInterval(this._timer);
   },
-  data() {
+  data () {
     return photoStore.state;
   },
   components: {
@@ -113,7 +114,16 @@ h1, h2 {
   background-repeat: no-repeat;
   background-color: #000;
   opacity: 0;
-  -webkit-animation: fadein .5s ease 0s forwards;
+  animation: showIn .5s ease 0s forwards;
+}
+
+@keyframes showIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .header {

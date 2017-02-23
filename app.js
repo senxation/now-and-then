@@ -1,6 +1,5 @@
 const express = require('express')
-const authApp = express();
-const app = require('./build/dev-server');
+const app = express();
 const _ = require('underscore');
 const config = require('./app_config');
 
@@ -13,7 +12,6 @@ const fs = require('fs-extra');
 const MemoryFileSystem = require('memory-fs');
 const mfs = new MemoryFileSystem();
 
-const opn = require('opn');
 const port = 8000;
 const moment = require('moment');
 
@@ -24,13 +22,13 @@ const list = fs.existsSync(listPath) ? fs.readJsonSync(listPath) : [];
 let syncedList = list;
 
 // cors
-authApp.use(function(req, res, next) {
+app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   next();
 });
 
-authApp.get('/oauth2callback', function (req, res) {
+app.get('/oauth2callback', function (req, res) {
   res.send(`${req.query.code}`)
 });
 
@@ -60,8 +58,8 @@ const getFile = (id, ext) => {
   });
 };
 
-authApp.get('/photo', function (req, res, next) {
-  const list = syncedList;
+app.get('/photo', function (req, res, next) {
+  const list = _.filter(syncedList, item => item.hasThumbnail && (!item.imageMediaMetadata || item.imageMediaMetadata.cameraMake !== 'Apple')); // 핸폰으로 찍은거 제외
   const ret = {};
   const from = req.query.from;
   const idx = (from) ? _.findIndex(list, item => item.id === from) : 0;
@@ -94,14 +92,14 @@ authApp.get('/photo', function (req, res, next) {
   });
 });
 
-authApp.get('/file/:id', function (req, res, next) {
+app.get('/file/:id', function (req, res, next) {
   const path = '/photo/' + req.params.id;
   const buffer = mfs.readFileSync(path);
   res.set('Content-Type', express.static.mime.lookup(path));
   res.send(buffer);
 });
 
-authApp.get('/schedule', function (req, res, next) {
+app.get('/schedule', function (req, res, next) {
   ical.fetch(config.ical, moment().startOf('day'), moment().startOf('day').add(1, 'month')).then((data) => {
     res.json({
       events: _.sortBy(data, event => moment(event.start).toDate())
@@ -111,7 +109,9 @@ authApp.get('/schedule', function (req, res, next) {
   });
 });
 
-authApp.listen(port, function (err) {
+app.use('/', express.static('./'));
+
+app.listen(port, function (err) {
   if (err) {
     console.log(err)
     return
@@ -125,8 +125,7 @@ auth.authorize(oauth2Client, (auth) => {
   drive.event.on('modified', () => {
     logger('modified.');
     drive.listPhotos().then((list) => {
-      list = _.filter(list, item => item.hasThumbnail && (!item.imageMediaMetadata || item.imageMediaMetadata.cameraMake !== 'Apple')); // 핸폰으로 찍은거 제외
-      logger(`${list.length} photos synced.`);
+      logger(`${list.length} files synced.`);
       fs.outputJsonSync(listPath, list);
       syncedList = list;
     }, (error) => {
@@ -139,14 +138,6 @@ auth.authorize(oauth2Client, (auth) => {
   });
 
   drive.event.once('synced', () => {
-    opn('http://localhost:8080');
-  });
-
-  // init vue
-  app.listen(8080, function (err) {
-    if (err) {
-      console.log(err)
-      return
-    }
+    logger('http://localhost:8000');
   });
 });
