@@ -57,13 +57,17 @@ export default {
     font-weight: 400;
     text-align:left;
     line-height: 28px;
+    font-family: 'Roboto', Helvetica, Arial, sans-serif;
   }
   .time {
     font-size: 40px;
-    font-weight: 600;
     line-height: 60px;
+    font-family: 'Roboto', Helvetica, Arial, sans-serif;
+    font-weight: 400;
   }
   .date {
     line-height: 28px;
+    font-family: 'Roboto', Helvetica, Arial, sans-serif;
+    font-weight: 300;
   }
 </style>

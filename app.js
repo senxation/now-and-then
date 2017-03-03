@@ -1,3 +1,5 @@
+const isProduction = process.env.NODE_ENV === 'production';
+
 const express = require('express')
 const app = express();
 const _ = require('underscore');
@@ -11,6 +13,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const MemoryFileSystem = require('memory-fs');
 const mfs = new MemoryFileSystem();
+const opn = require('opn');
 
 const port = 8000;
 const moment = require('moment');
@@ -109,7 +112,9 @@ app.get('/schedule', function (req, res, next) {
   });
 });
 
-app.use('/', express.static('./'));
+if (isProduction) {
+  app.use('/', express.static('./dist'));
+}
 
 app.listen(port, function (err) {
   if (err) {
@@ -137,7 +142,12 @@ auth.authorize(oauth2Client, (auth) => {
     logger('synced.');
   });
 
-  drive.event.once('synced', () => {
-    logger('http://localhost:8000');
-  });
+  if (isProduction) {
+    drive.event.once('synced', () => {
+      logger('wait for opening... http://localhost:8000');
+      opn('http://localhost:8000').then(() => {
+        logger('initialized');
+      });
+    });
+  }
 });

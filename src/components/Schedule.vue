@@ -1,20 +1,20 @@
 <template>
   <div class="schedule">
-    <ul v-if="today.length || upcoming.length">
+    <ul class="days" v-if="today.length || upcoming.length">
       <li class="today">
         <h2>TODAY</h2>
         <ul v-if="today.length">
           <li class="event" v-for="event in today">
-            {{event.startTimeText}} {{event.summary}} {{ event.nthDayText }}
+            {{event.startTimeText}} {{event.summary}} {{event.location}} {{ event.nthDayText }}
           </li>
         </ul>
         <span v-if="!today.length">일정 없음</span>
       </li>
       <li class="upcoming" v-for="day in upcoming">
-        <h3>{{day | filterUpcomingDayText}}</h3>
-        <ul v-if="day.events.length">
-          <li class="upcoming" v-for="event in day.events">
-            {{event.startTimeText}} {{ event.summary }} {{ event.nthDayText }}
+        <h3 v-if="day.events">{{day | filterUpcomingDayText}}</h3>
+        <ul class="events" v-if="day.events && day.events.length">
+          <li class="event" v-for="event in day.events">
+            {{event.startTimeText}} {{ event.summary }} {{event.location}} {{ event.nthDayText }}
           </li>
         </ul>
       </li>
@@ -54,7 +54,8 @@ const store = {
               if (allDay && diffDay === i) {
                 continue;
               }
-              if (!_.find(upcoming, day => m.isSame(event.start, 'day'))) {
+
+              if (!_.find(upcoming, day => day.moment.isSame(event.start, 'day'))) {
                 upcoming.push({
                   moment: m,
                   events: []
@@ -91,8 +92,13 @@ const store = {
           }
         });
 
-        this.state.today = _.find(upcoming, day => day.moment.isSame(moment(), 'day')).events;
-        this.state.upcoming = _.first(_.filter(upcoming, day => day.moment.isAfter(moment(), 'day')), 4);
+        const today = _.find(upcoming, day => day.moment.isSame(moment(), 'day'));
+        this.state.today = (today) ? today.events : [];
+        const tempUpcoming = _.first(_.filter(upcoming, day => day.moment.isAfter(moment(), 'day')), 4);
+        while (tempUpcoming.length < 4) {
+          tempUpcoming.push({});
+        }
+        this.state.upcoming = tempUpcoming;
       });
     }, _.noop);
   }
@@ -116,14 +122,13 @@ export default {
 
 <style scoped>
 .schedule {
-  margin-left: 200px;
+  margin-left: 220px;
   height: 200px;
   color: #fff;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 14px;
   text-align:left;
 }
-ul {
+ul.days {
   display: flex;
   flex-flow: row wrap;
   justify-content: space-around;
@@ -133,15 +138,33 @@ ul {
 }
 li {
   display: inline-block;
+  min-width: 100px;
   vertical-align: top;
-  width: 80px;
-  height: 80px;
+  font-size: 14px;
+  font-weight: 400;
+}
+ul.events {
+  list-style: none;
+  margin-top: 0;
+  padding: 0;
+}
+li.event:not(:first-child) {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  font-weight: 400;
 }
 h2 {
   font-size: 22px;
-  line-height: 28px;
+  font-weight: 400;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 400;
 }
 h2, h3 {
+  line-height: 28px;
+  font-family: 'Roboto', Helvetica, Arial, sans-serif;
   padding: 0;
   margin: 70px 0 5px 0;
   line-height: 28px;
