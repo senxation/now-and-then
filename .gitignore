@@ -1,6 +1,8 @@
 .DS_Store
 /node_modules/
-/cache
 npm-debug.log
 client_secret.json
 app_config.js
+/cache
+/dist
+/static
