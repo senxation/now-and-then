@@ -8,7 +8,7 @@
     "dev": "node app.js & node build/dev-server.js",
     "build": "node build/build.js",
     "lint": "eslint --ext .js,.vue src",
-    "start": "NODE_ENV=production node app.js"
+    "start": "node displayToggler.js && NODE_ENV=production node app.js"
   },
   "dependencies": {
     "fs-extra": "^2.0.0",
