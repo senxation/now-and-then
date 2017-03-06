@@ -13,7 +13,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const MemoryFileSystem = require('memory-fs');
 const mfs = new MemoryFileSystem();
-const opn = require('opn');
+const exec = require('child_process').exec;
 
 const port = 8000;
 const moment = require('moment');
@@ -142,11 +142,15 @@ auth.authorize(oauth2Client, (auth) => {
     logger('synced.');
   });
 
-  if (isProduction) {
+  if (isProduction) { // rpi
     drive.event.once('synced', () => {
-      logger('wait for opening... http://localhost:8000');
-      opn('http://localhost:8000').then(() => {
-        logger('initialized');
+      exec(`chromium-browser --noerrdialogs --incognito --kiosk http://localhost:${port}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`exec error: ${error}`);
+          return;
+        }
+        console.log(`stdout: ${stdout}`);
+        console.log(`stderr: ${stderr}`);
       });
     });
   }
