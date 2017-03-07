@@ -41,9 +41,12 @@ const photoStore = {
         info: info,
         path: info.path
       });
-      if (this.state.bgs.length > 2) {
-        this.state.bgs.shift();
-      }
+      /* force delay to next tick */
+      _.defer(() => {
+        if (this.state.bgs.length > 2) {
+          this.state.bgs.shift();
+        }
+      })
     });
   }
 };
@@ -153,7 +156,7 @@ h1, h2 {
 }
 
 .background {
-  position:fixed;
+  position:absolute;
   left:0;
   right:0;
   top:0;
@@ -162,17 +165,12 @@ h1, h2 {
   background-size: 100%;
   background-repeat: no-repeat;
   background-color: #000;
-  opacity: 0;
-  animation: showIn .5s ease 0s forwards;
+  animation: showIn 1s;
 }
 
 @keyframes showIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .header {

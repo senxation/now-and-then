@@ -3,7 +3,7 @@
     <ul class="days" v-if="today.length || upcoming.length">
       <li class="today">
         <h2>TODAY</h2>
-        <ul v-if="today.length">
+        <ul class="events" v-if="today.length">
           <li class="event" v-for="event in today">
             {{event | eventText}}
           </li>
@@ -151,6 +151,12 @@ ul.days {
   margin-top: 0;
   padding: 0;
 }
+.today {
+  flex: 1.2;
+}
+.upcoming {
+  flex: 1;
+}
 li {
   display: inline-block;
   min-width: 100px;
@@ -163,6 +169,7 @@ ul.events {
   list-style: none;
   margin-top: 0;
   padding: 0;
+  margin-right: 10px;
 }
 li.event:not(:first-child) {
   display: block;
