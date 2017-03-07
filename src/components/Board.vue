@@ -2,7 +2,10 @@
   <div class="now-and-then">
     <div class="board current">
       <ul>
-        <li class="background" v-for="url in bgs" :key="url" v-bind:style="{'background-image':`url(${url})`}" />
+        <li class="background" v-for="bg in bgs" :key="bg.path" v-bind:style="{'background-image':`url(${bg.path})`}">
+          <span class="date">{{bg.info | imageTime }}</span>
+          <span class="info">{{bg.info | imageMeta }}</span>
+        </li>
       </ul>
       <div class="header">
         <Clock />
@@ -14,6 +17,7 @@
 
 <script>
 import _ from 'underscore';
+import moment from 'moment';
 import Clock from './Clock.vue';
 import Schedule from './Schedule.vue';
 
@@ -31,9 +35,12 @@ const photoStore = {
       image.src = path;
     });
   },
-  next(path) {
-    this.loadImage(path).then(() => {
-      this.state.bgs.push(path);
+  next(info) {
+    this.loadImage(info.path).then(() => {
+      this.state.bgs.push({
+        info: info,
+        path: info.path
+      });
       if (this.state.bgs.length > 2) {
         this.state.bgs.shift();
       }
@@ -58,9 +65,11 @@ const fetchNext = (function () {
             localStorage.setItem('from', from);
           }
           from = json.next.id;
+        } else {
+          from = null;
         }
 
-        photoStore.next(json.current.path);
+        photoStore.next(json.current);
       })
     }, _.noop);
   };
@@ -81,6 +90,46 @@ export default {
   },
   data () {
     return photoStore.state;
+  },
+  filters: {
+    imageTime: function (info) {
+      if (info.createdTime) {
+        const time = moment(info.createdTime).format('YYYY. M. D ddd - h:mm a');
+        return `${time}`;
+      }
+      return '';
+    },
+    imageMeta: function (info) {
+      if (info.imageMediaMetadata) {
+        const arr = [];
+        const meta = [];
+        const model = info.imageMediaMetadata.cameraModel;
+        const lens = info.imageMediaMetadata.lens;
+        const aperture = info.imageMediaMetadata.aperture;
+        const exposureTime = (info.imageMediaMetadata.exposureTime < 1) ? '1/' + (1 / info.imageMediaMetadata.exposureTime).toFixed(0) : info.imageMediaMetadata.exposureTime;
+        const iso = info.imageMediaMetadata.isoSpeed;
+        const focalLength = info.imageMediaMetadata.focalLength;
+
+        if (focalLength > 0) meta.push(`${focalLength}mm`);
+        if (aperture > 0) meta.push(`f${aperture}`);
+        if (exposureTime > 0) meta.push(`${exposureTime}s`);
+        if (iso > 0) meta.push(`ISO ${iso}`);
+        if (lens) meta.push(`${lens}`);
+
+        if (model) {
+          arr.push(model);
+          if (meta.length) {
+            arr.push(meta.join(', '));
+          }
+          return arr.join(' - ');
+        }
+
+        if (meta.length) {
+          return meta.join(', ');
+        }
+      }
+      return '';
+    }
   },
   components: {
     Clock,
@@ -152,5 +201,22 @@ li {
 
 a {
   color: #42b983;
+}
+
+.info {
+  position:absolute;
+  color: #999;
+  font-size: 12px;
+  left: 10px;
+  bottom: 10px;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, .9), 0px 0px 2px rgba(0, 0, 0, .9);
+}
+
+.date {
+  position:absolute;
+  color: #fff;
+  right: 10px;
+  bottom: 10px;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, .9), 0px 0px 2px rgba(0, 0, 0, .9);
 }
 </style>

@@ -5,7 +5,7 @@
         <h2>TODAY</h2>
         <ul v-if="today.length">
           <li class="event" v-for="event in today">
-            {{event.startTimeText}} {{event.summary}} {{event.location}} {{ event.nthDayText }}
+            {{event | eventText}}
           </li>
         </ul>
         <span v-if="!today.length">일정 없음</span>
@@ -14,7 +14,7 @@
         <h3 v-if="day.events">{{day | filterUpcomingDayText}}</h3>
         <ul class="events" v-if="day.events && day.events.length">
           <li class="event" v-for="event in day.events">
-            {{event.startTimeText}} {{ event.summary }} {{event.location}} {{ event.nthDayText }}
+            {{event | eventText}}
           </li>
         </ul>
       </li>
@@ -115,6 +115,21 @@ export default {
   filters: {
     filterUpcomingDayText: function (day) {
       return day.moment.format('M/D ddd');
+    },
+    eventText: function (event) {
+      const arr = [];
+      _.each(['startTimeText', 'summary', 'nthDayText'], (key) => {
+        if (event[key]) {
+          arr.push(event[key]);
+        }
+      });
+
+      let ret = arr.join(' ');
+      if (event.location) {
+        ret += ` @${event.location}`;
+      }
+
+      return ret;
     }
   }
 }
@@ -142,6 +157,7 @@ li {
   vertical-align: top;
   font-size: 14px;
   font-weight: 400;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, .9), 0px 0px 2px rgba(0, 0, 0, .9);
 }
 ul.events {
   list-style: none;
@@ -153,6 +169,7 @@ li.event:not(:first-child) {
   margin-top: 5px;
   font-size: 14px;
   font-weight: 400;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, .9), 0px 0px 2px rgba(0, 0, 0, .9);
 }
 h2 {
   font-size: 22px;
@@ -168,6 +185,7 @@ h2, h3 {
   padding: 0;
   margin: 70px 0 5px 0;
   line-height: 28px;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, .9), 0px 0px 2px rgba(0, 0, 0, .9);
 }
 
 </style>

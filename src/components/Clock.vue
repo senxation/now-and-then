@@ -58,16 +58,19 @@ export default {
     text-align:left;
     line-height: 28px;
     font-family: 'Roboto', Helvetica, Arial, sans-serif;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, .9), 0px 0px 2px rgba(0, 0, 0, .9);
   }
   .time {
     font-size: 40px;
     line-height: 60px;
     font-family: 'Roboto', Helvetica, Arial, sans-serif;
     font-weight: 400;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, .9), 0px 0px 2px rgba(0, 0, 0, .9);
   }
   .date {
     line-height: 28px;
     font-family: 'Roboto', Helvetica, Arial, sans-serif;
     font-weight: 300;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, .9), 0px 0px 2px rgba(0, 0, 0, .9);
   }
 </style>

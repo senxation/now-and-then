@@ -62,7 +62,10 @@ const getFile = (id, ext) => {
 };
 
 app.get('/photo', function (req, res, next) {
-  const list = _.filter(syncedList, item => item.hasThumbnail && (!item.imageMediaMetadata || item.imageMediaMetadata.cameraMake !== 'Apple')); // 핸폰으로 찍은거 제외
+  const list = _.filter(syncedList, item => {
+    // 핸폰으로 찍은거 제외. 메타데이터 없는거 제외.
+    return item.hasThumbnail && item.imageMediaMetadata && item.imageMediaMetadata.cameraMake && item.imageMediaMetadata.cameraMake !== 'Apple'
+  });
   const ret = {};
   const from = req.query.from;
   const idx = (from) ? _.findIndex(list, item => item.id === from) : 0;
