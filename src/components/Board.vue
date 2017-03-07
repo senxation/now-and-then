@@ -83,7 +83,7 @@ export default {
     this._timer = setInterval(fetchNext, INTERVAL);
     setTimeout(() => {
       location.reload()
-    }, 1000 * 60 * 60 * 3); // 3시간에 한번씨
+    }, 1000 * 60 * 60 * 3); // 3시간에 한번씩
   },
   beforeDestroy () {
     clearInterval(this._timer);
