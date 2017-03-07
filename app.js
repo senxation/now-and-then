@@ -136,12 +136,12 @@ auth.authorize(oauth2Client, (auth) => {
       logger(`${list.length} files synced.`);
       fs.outputJsonSync(listPath, list);
       syncedList = list;
+      drive.event.emit('synced');
     }, (error) => {
       logger(error);
     });
-  })
+  });
   drive.event.on('synced', () => {
-    syncedList = list;
     logger('synced.');
   });
 
