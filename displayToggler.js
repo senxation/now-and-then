@@ -4,7 +4,8 @@ const exec = require('child_process').exec;
 
 let timer = null;
 let turnOffTimer = null;
-let status = true;
+let monitorPowered = true;
+let censored = false;
 
 const PIN = 40;
 const CENSOR_INTERVAL = 200;
@@ -17,7 +18,7 @@ const turnOn = () => {
       console.error(`exec error: ${error}`);
       return;
     }
-    status = true;
+    monitorPowered = true;
     console.log(`stdout: ${stdout}`);
     console.log(`stderr: ${stderr}`);
   });
@@ -30,7 +31,7 @@ const turnOff = () => {
       console.error(`exec error: ${error}`);
       return;
     }
-    status = false;
+    monitorPowered = false;
     console.log(`stdout: ${stdout}`);
     console.log(`stderr: ${stderr}`);
   });
@@ -43,11 +44,14 @@ gpio.setup(PIN, gpio.DIR_IN, () => {
         logger(err);
         return;
       }
-      if (value === status) {
+      if (value === censored) {
         return;
       }
+      censored = value;
       if (value) { // on
-        if (!turnOffTimer && !status) {
+        logger('motion detected.');
+        censored = value;
+        if (!turnOffTimer && !monitorPowered) {
           turnOn();
         }
 

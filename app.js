@@ -147,7 +147,7 @@ auth.authorize(oauth2Client, (auth) => {
 
   if (isProduction) { // rpi
     drive.event.once('synced', () => {
-      exec(`chromium-browser --noerrdialogs --incognito --kiosk http://localhost:${port}`, (error, stdout, stderr) => {
+      exec(`chromium-browser --noerrdialogs --kiosk http://localhost:${port}`, (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
           return;
