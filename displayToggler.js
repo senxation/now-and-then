@@ -9,7 +9,7 @@ let censored = false;
 
 const PIN = 40;
 const CENSOR_INTERVAL = 200;
-const STAY_ON_DURATION = 1000 * 60 * 3;
+const STAY_ON_DURATION = 1000 * 60 * 1; // 1 minute
 
 const turnOn = () => {
   logger('display on');
