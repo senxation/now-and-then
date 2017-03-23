@@ -8,8 +8,8 @@ let monitorPowered = true;
 let censored = false;
 
 const PIN = 40;
-const CENSOR_INTERVAL = 500;
-const STAY_ON_DURATION = 1000 * 60 * 1; // 1 minute
+const CENSOR_INTERVAL = 1000;
+const STAY_ON_DURATION = 1000 * 30; // 30 sec
 
 const turnOn = () => {
   logger('display on');
@@ -25,7 +25,7 @@ const turnOff = () => {
   logger('display off');
   try {
     logger(execSync('vcgencmd display_power 0'));
-    monitorPowered = true;
+    monitorPowered = false;
   } catch (e) {
     console.error(`exec error: ${e}`);
   }
@@ -38,6 +38,7 @@ gpio.setup(PIN, gpio.DIR_IN, () => {
       if (err) {
         logger(err);
         clearTimeout(turnOffTimer);
+        turnOffTimer = null;
         return;
       }
       if (value === censored) {
@@ -47,12 +48,13 @@ gpio.setup(PIN, gpio.DIR_IN, () => {
       if (value) { // on
         logger('motion detected.');
         censored = value;
-        if (!turnOffTimer && !monitorPowered) {
-          turnOn();
-        }
 
         clearTimeout(turnOffTimer);
         turnOffTimer = null;
+
+        if (!turnOffTimer && !monitorPowered) {
+          turnOn();
+        }
       } else {
         logger('nobody.');
         turnOffTimer = setTimeout(() => {
