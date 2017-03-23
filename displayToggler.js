@@ -32,6 +32,7 @@ const turnOff = () => {
 };
 
 gpio.setup(PIN, gpio.DIR_IN, () => {
+  logger('detecting motion...')
   timer = setInterval(() => {
     gpio.read(PIN, (err, value) => {
       if (err) {
@@ -51,11 +52,13 @@ gpio.setup(PIN, gpio.DIR_IN, () => {
         }
 
         clearTimeout(turnOffTimer);
-        turnOffTimer = setTimeout(() => {
-          turnOff();
-        }, STAY_ON_DURATION);
+        turnOffTimer = null;
       } else {
         logger('nobody.');
+        turnOffTimer = setTimeout(() => {
+          turnOff();
+          turnOffTimer = null;
+        }, STAY_ON_DURATION);
       }
     });
   }, CENSOR_INTERVAL);
