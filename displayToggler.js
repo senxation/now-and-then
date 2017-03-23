@@ -1,6 +1,6 @@
 const gpio = require('rpi-gpio');
 const logger = require('./lib/logger');
-const exec = require('child_process').exec;
+const execSync = require('child_process').execSync;
 
 let timer = null;
 let turnOffTimer = null;
@@ -8,33 +8,27 @@ let monitorPowered = true;
 let censored = false;
 
 const PIN = 40;
-const CENSOR_INTERVAL = 200;
+const CENSOR_INTERVAL = 500;
 const STAY_ON_DURATION = 1000 * 60 * 1; // 1 minute
 
 const turnOn = () => {
   logger('display on');
-  exec('vcgencmd display_power 1', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
+  try {
+    logger(execSync('vcgencmd display_power 1'));
     monitorPowered = true;
-    console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
-  });
+  } catch (e) {
+    console.error(`exec error: ${e}`);
+  }
 };
 
 const turnOff = () => {
   logger('display off');
-  exec('vcgencmd display_power 0', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
-    monitorPowered = false;
-    console.log(`stdout: ${stdout}`);
-    console.log(`stderr: ${stderr}`);
-  });
+  try {
+    logger(execSync('vcgencmd display_power 0'));
+    monitorPowered = true;
+  } catch (e) {
+    console.error(`exec error: ${e}`);
+  }
 };
 
 gpio.setup(PIN, gpio.DIR_IN, () => {
@@ -42,6 +36,7 @@ gpio.setup(PIN, gpio.DIR_IN, () => {
     gpio.read(PIN, (err, value) => {
       if (err) {
         logger(err);
+        clearTimeout(turnOffTimer);
         return;
       }
       if (value === censored) {
@@ -57,9 +52,10 @@ gpio.setup(PIN, gpio.DIR_IN, () => {
 
         clearTimeout(turnOffTimer);
         turnOffTimer = setTimeout(() => {
-          turnOffTimer = null;
           turnOff();
         }, STAY_ON_DURATION);
+      } else {
+        logger('nobody.');
       }
     });
   }, CENSOR_INTERVAL);
