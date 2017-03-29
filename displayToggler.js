@@ -8,8 +8,8 @@ let monitorPowered = true;
 let censored = false;
 
 const PIN = 40;
-const CENSOR_INTERVAL = 1000;
-const STAY_ON_DURATION = 1000 * 30; // 30 sec
+const CENSOR_INTERVAL = 200;
+const STAY_ON_DURATION = 1000 * 60;
 
 const turnOn = () => {
   logger('display on');
